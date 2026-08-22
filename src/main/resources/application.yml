@@ -1,0 +1,50 @@
+# src/main/resources/application.yml
+spring:
+  application:
+    name: neighborshare
+  profiles:
+    active: dev # Perfil padrão
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    url: jdbc:postgresql://localhost:5432/neighborshare_dev
+    username: db_user
+    password: db_password
+  jpa:
+    hibernate:
+      ddl-auto: update # Apenas em dev para agilizar, em prod usamos Flyway/Liquibase
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+---
+spring:
+  config:
+    activate:
+      on-profile: test
+  # Configuração para Testcontainers (Spring Boot 3.1+ suporta ConnectionDetails auto-config)
+  # Não precisamos definir URL aqui, o @ServiceConnection nos testes cuidará disso.
+  datasource:
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: ${DB_URL} # Injetado via variável de ambiente
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: validate # Nunca alterar schema em prod via Hibernate
+    show-sql: false
