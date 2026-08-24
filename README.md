@@ -58,49 +58,45 @@ The project is built with a focus on **production-readiness**: layered architect
 
 The project follows a **layered architecture** with clear separation of concerns:
 
-```
-┌────────────────────────────────────────────────────┐
-│                   API Layer                        │
-│     Controllers → request/response mapping         │
-├────────────────────────────────────────────────────┤
-│               Application Layer                    │
-│     Services → business logic                      │
-│     DTOs, Mappers (MapStruct)                      │
-├────────────────────────────────────────────────────┤
-│                 Domain Layer                       │
-│     Entities, Enums, Repository interfaces         │
-├────────────────────────────────────────────────────┤
-│             Infrastructure Layer                   │
-│     Security (JWT), S3 Config,                     │
-│     Exception Handler, Metrics                     │
-└────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph API["API Layer"]
+        A1["Controllers → request/response mapping"]
+    end
+    subgraph APP["Application Layer"]
+        A2["Services → business logic"]
+        A3["DTOs, Mappers (MapStruct)"]
+    end
+    subgraph DOM["Domain Layer"]
+        A4["Entities, Enums, Repository interfaces"]
+    end
+    subgraph INFRA["Infrastructure Layer"]
+        A5["Security (JWT), S3 Config"]
+        A6["Exception Handler, Metrics"]
+    end
+
+    API --> APP --> DOM --> INFRA
 ```
 
 ### Request Lifecycle
 
-```
-Client
-  │
-  ├─► JwtAuthenticationFilter   ← validates Bearer token
-  │
-  ├─► Controller                ← maps HTTP to use case
-  │
-  ├─► Service                   ← business rules + transaction management
-  │
-  ├─► Repository                ← Spring Data JPA
-  │
-  └─► PostgreSQL
+```mermaid
+flowchart TD
+    Client(["Client"]) --> Filter["JwtAuthenticationFilter<br/>validates Bearer token"]
+    Filter --> Controller["Controller<br/>maps HTTP to use case"]
+    Controller --> Service["Service<br/>business rules + transaction management"]
+    Service --> Repository["Repository<br/>Spring Data JPA"]
+    Repository --> DB[("PostgreSQL")]
 ```
 
 ### Observability Stack
 
-```
-Spring Boot API
-  └─ /actuator/prometheus  ──► Prometheus (scrape every 15s)
-                                  │
-                                  ├─ evaluates alert.rules.yml
-                                  │
-                                  └─► Alertmanager ──► Slack (#alerts-neighborshare)
+```mermaid
+flowchart LR
+    API["Spring Boot API"] -->|"/actuator/prometheus"| Prom["Prometheus<br/>scrape every 15s"]
+    Prom -->|evaluates| Rules["alert.rules.yml"]
+    Rules --> AM["Alertmanager"]
+    AM -->|routes to| Slack["Slack #alerts-neighborshare"]
 ```
 
 ---
@@ -341,11 +337,21 @@ Available roles: `COMMUNITY_ADMIN` | `MEMBER`
 
 **Reservation lifecycle:**
 
+```mermaid
+stateDiagram-v2
+    [*] --> PENDING
+    PENDING --> APPROVED
+    PENDING --> REJECTED
+    APPROVED --> ACTIVE
+    APPROVED --> CANCELLED
+    ACTIVE --> COMPLETED
+    ACTIVE --> CANCELLED
+    REJECTED --> [*]
+    COMPLETED --> [*]
+    CANCELLED --> [*]
 ```
-PENDING ──► APPROVED ──► ACTIVE ──► COMPLETED
-   │                                    │
-   └──► REJECTED         CANCELLED ◄───┘
-```
+<!-- Nota: a transição para CANCELLED foi assumida como possível a partir de APPROVED/ACTIVE
+     (antes da conclusão do empréstimo). Ajuste conforme a regra real implementada em ReservationService. -->
 
 ---
 
