@@ -14,7 +14,10 @@ public interface ReservationRepository extends JpaRepository<Reservation, UUID> 
     @Query("""
             SELECT COUNT(r) > 0 FROM Reservation r
             WHERE r.item.id = :itemId
-            AND r.status IN ('APPROVED', 'ACTIVE')
+            AND r.status IN (
+                br.leetjourney.neighborshare.domain.enums.ReservationStatus.APPROVED,
+                br.leetjourney.neighborshare.domain.enums.ReservationStatus.ACTIVE
+            )
             AND (r.startDate <= :endDate AND r.endDate >= :startDate)
             """)
     boolean hasOverlappingReservations(

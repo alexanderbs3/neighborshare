@@ -7,8 +7,6 @@ import jakarta.persistence.Table;
 import lombok.*;
 import org.hibernate.annotations.SQLRestriction;
 
-import java.time.LocalDateTime;
-
 @Entity
 @Table(name = "communities")
 @SQLRestriction("deleted = false")
@@ -19,13 +17,13 @@ import java.time.LocalDateTime;
 @Builder
 public class Community extends BaseEntity {
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 100)
     private String name;
 
-    @Column(nullable = false)
+    @Column(length = 500)
     private String description;
 
-    @Column(nullable = false, unique = true, updatable = false)
+    @Column(nullable = false, unique = true, updatable = false, length = 10)
     private String inviteCode;
 
 

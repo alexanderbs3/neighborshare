@@ -12,7 +12,10 @@ import java.util.UUID;
 
 public interface CommunityMemberRepository extends JpaRepository<CommunityMember, UUID> {
 
-    @Query("SELECT cm FROM CommunityMember cm JOIN FETCH cm.user WHERE cm.community.id = :communityId")
+    @Query(
+            value = "SELECT cm FROM CommunityMember cm JOIN FETCH cm.user WHERE cm.community.id = :communityId",
+            countQuery = "SELECT COUNT(cm) FROM CommunityMember cm WHERE cm.community.id = :communityId"
+    )
     Page<CommunityMember> findAllByCommunityIdWithUser(@Param("communityId") UUID communityId, Pageable pageable);
 
     @Query("SELECT cm FROM CommunityMember cm JOIN FETCH cm.user WHERE cm.id = :memberId AND cm.community.id = :communityId")
@@ -26,6 +29,9 @@ public interface CommunityMemberRepository extends JpaRepository<CommunityMember
 
     long countByCommunityIdAndRole(UUID communityId, br.leetjourney.neighborshare.domain.enums.CommunityRole role);
 
-    @Query("SELECT cm FROM CommunityMember cm JOIN FETCH cm.community WHERE cm.user.id = :userId")
+    @Query(
+            value = "SELECT cm FROM CommunityMember cm JOIN FETCH cm.community WHERE cm.user.id = :userId",
+            countQuery = "SELECT COUNT(cm) FROM CommunityMember cm WHERE cm.user.id = :userId"
+    )
     Page<CommunityMember> findAllByUserIdWithCommunity(@Param("userId") UUID userId, Pageable pageable);
 }

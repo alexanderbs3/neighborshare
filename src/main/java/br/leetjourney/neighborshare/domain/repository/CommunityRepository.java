@@ -1,6 +1,5 @@
 package br.leetjourney.neighborshare.domain.repository;
 
-import br.leetjourney.neighborshare.application.dto.response.ItemResponseDTO;
 import br.leetjourney.neighborshare.domain.model.Community;
 import org.springframework.data.jpa.repository.JpaRepository;
 

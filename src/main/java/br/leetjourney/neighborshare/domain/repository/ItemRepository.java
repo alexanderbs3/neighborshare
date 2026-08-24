@@ -13,6 +13,6 @@ import java.util.UUID;
 public interface ItemRepository extends JpaRepository<Item, UUID> {
     Page<Item> findByCommunityIdAndStatus(UUID communityId, ItemStatus status, Pageable pageable);
 
-    @Query("SELECT I FROM Item i JOIN FETCH i.owner WHERE i.id = :id")
+    @Query("SELECT i FROM Item i JOIN FETCH i.owner WHERE i.id = :id")
     Item findByIdWithOwner(@Param("id") UUID id);
 }

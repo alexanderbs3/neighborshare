@@ -42,8 +42,9 @@ public class Item extends BaseEntity {
 
     @ElementCollection
     @CollectionTable(name = "item_photos", joinColumns = @JoinColumn(name = "item_id"))
-    @Column(name = "photo_url")
+    @Column(name = "photo_url", length = 2048)
     private List<String> photoUrls;
 
+    @Column(length = 1000)
     private String loanRules;
 }

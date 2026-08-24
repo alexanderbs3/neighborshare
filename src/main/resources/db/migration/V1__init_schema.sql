@@ -10,8 +10,10 @@ CREATE TABLE users (
                        reputation_score NUMERIC(3, 2) NOT NULL DEFAULT 5.00,
                        deleted BOOLEAN NOT NULL DEFAULT FALSE,
                        version BIGINT NOT NULL DEFAULT 0,
-                       created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                       updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+                       created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                       updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                       created_by VARCHAR(255),
+                       updated_by VARCHAR(255)
 );
 
 -- Tabela de Comunidades
@@ -22,8 +24,10 @@ CREATE TABLE communities (
                              invite_code VARCHAR(10) NOT NULL UNIQUE,
                              deleted BOOLEAN NOT NULL DEFAULT FALSE,
                              version BIGINT NOT NULL DEFAULT 0,
-                             created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                             updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+                             created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                             updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                             created_by VARCHAR(255),
+                             updated_by VARCHAR(255)
 );
 
 -- Tabela de Associação de Membros
@@ -34,8 +38,10 @@ CREATE TABLE community_members (
                                    role VARCHAR(30) NOT NULL,
                                    deleted BOOLEAN NOT NULL DEFAULT FALSE,
                                    version BIGINT NOT NULL DEFAULT 0,
-                                   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                                   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                   created_by VARCHAR(255),
+                                   updated_by VARCHAR(255),
                                    CONSTRAINT uk_user_community UNIQUE (user_id, community_id)
 );
 
@@ -49,25 +55,33 @@ CREATE TABLE items (
                        owner_id UUID NOT NULL REFERENCES users(id),
                        community_id UUID NOT NULL REFERENCES communities(id),
                        loan_rules VARCHAR(1000),
-                       photo_urls TEXT[],
                        deleted BOOLEAN NOT NULL DEFAULT FALSE,
                        version BIGINT NOT NULL DEFAULT 0,
-                       created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                       updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+                       created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                       updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                       created_by VARCHAR(255),
+                       updated_by VARCHAR(255)
+);
+
+CREATE TABLE item_photos (
+                             item_id UUID NOT NULL REFERENCES items(id) ON DELETE CASCADE,
+                             photo_url VARCHAR(2048)
 );
 
 -- Tabela de Reservas
 CREATE TABLE reservations (
                               id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                               item_id UUID NOT NULL REFERENCES items(id),
-                              borrower_id UUID NOT NULL REFERENCES users(id),
-                              start_date DATE NOT NULL,
-                              end_date DATE NOT NULL,
+                              requester_id UUID NOT NULL REFERENCES users(id),
+                              start_date TIMESTAMP NOT NULL,
+                              end_date TIMESTAMP NOT NULL,
                               status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
                               deleted BOOLEAN NOT NULL DEFAULT FALSE,
                               version BIGINT NOT NULL DEFAULT 0,
-                              created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                              updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+                              created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                              updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                              created_by VARCHAR(255),
+                              updated_by VARCHAR(255)
 );
 
 -- Tabela de Avaliações
@@ -80,8 +94,10 @@ CREATE TABLE reviews (
                          comment VARCHAR(1000),
                          deleted BOOLEAN NOT NULL DEFAULT FALSE,
                          version BIGINT NOT NULL DEFAULT 0,
-                         created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                         updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+                         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                         created_by VARCHAR(255),
+                         updated_by VARCHAR(255)
 );
 
 -- Índices de Performance

@@ -13,5 +13,6 @@ public interface CommunityMapper {
     Community toEntity(CommunityCreateRequestDTO dto);
 
     @Mapping(target = "memberCount", ignore = true)
+    @Mapping(source = "createdDate", target = "createdAt")
     CommunityResponseDTO toResponse(Community community);
 }
