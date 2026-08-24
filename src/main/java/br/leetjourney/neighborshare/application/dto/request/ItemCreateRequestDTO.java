@@ -20,9 +20,9 @@ public record ItemCreateRequestDTO(
         ItemCondition condition,
 
         @NotNull(message = "O ID da comunidade  é obrigatoria")
-        UUID commumityId,
+        UUID communityId,
 
-        String loadRules,
+        String loanRules,
 
         List<String> photoUrls
 ) {}
