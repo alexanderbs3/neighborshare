@@ -1,0 +1,40 @@
+global:
+  resolve_timeout: 5m
+
+# Regras de Inibição para evitar falhas em cascata
+inhibit_rules:
+  # Regra 1: Se o PostgreSQL cair, inibir erros de aplicação, pool de conexões e latência
+  - source_matchers:
+      - alertname = "PostgresDown"
+    target_matchers:
+      - alertname =~ "HighHttp5xxRate|HikariConnectionPoolExhausted|HighHttpLatencyP95"
+    equal: ['environment']
+
+  # Regra 2: Se a API estiver fora do ar (ApiDown), inibir alertas internos de HTTP e métricas
+  - source_matchers:
+      - alertname = "NeighborShareApiDown"
+    target_matchers:
+      - alertname =~ "HighHttp5xxRate|HighHttpLatencyP95|HikariConnectionPoolExhausted"
+    equal: ['environment']
+
+  # Regra 3: Regra genérica de severidade — se existir um erro CRITICAL ativo, silenciar WARNINGS do mesmo serviço
+  - source_matchers:
+      - severity = "critical"
+    target_matchers:
+      - severity = "warning"
+    equal: ['environment', 'service']
+
+route:
+  group_by: ['alertname', 'cluster', 'service', 'environment']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  receiver: 'slack-critical'
+
+receivers:
+  - name: 'slack-critical'
+    slack_configs:
+      - api_url: 'https://hooks.slack.com/services/T00/B00/XXX'
+        channel: '#alerts-neighborshare'
+        send_resolved: true
+        text: "🚨 *[{{ .Status | toUpper }}]* {{ .CommonAnnotations.summary }}\n{{ .CommonAnnotations.description }}"

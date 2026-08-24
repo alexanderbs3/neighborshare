@@ -1,0 +1,49 @@
+groups:
+  - name: neighborshare_api_alerts
+    rules:
+      # 1. Disponibilidade
+      - alert: NeighborShareApiDown
+        expr: up{job="neighborshare-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: neighborshare-api
+        annotations:
+          summary: "Instância do NeighborShare fora do ar"
+          description: "A instância {{ $labels.instance }} está inacessível há mais de 1 minuto."
+
+      # 2. Taxa de Erros HTTP 5xx
+      - alert: HighHttp5xxRate
+        expr: >
+          (sum(rate(http_server_requests_seconds_count{status=~"5.."}[2m])) 
+          / sum(rate(http_server_requests_seconds_count[2m]))) * 100 > 5
+        for: 2m
+        labels:
+          severity: critical
+          service: neighborshare-api
+        annotations:
+          summary: "Taxa de erro HTTP 5xx elevada (> 5%)"
+          description: "A taxa de erros 5xx na API está em {{ $value | printf \"%.2f\" }}% nos últimos 2 minutos."
+
+      # 3. Latência P95 (SLO de Performance)
+      - alert: HighHttpLatencyP95
+        expr: >
+          histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket[5m])) by (le)) > 1.5
+        for: 3m
+        labels:
+          severity: warning
+          service: neighborshare-api
+        annotations:
+          summary: "Latência p95 acima do limite (1.5s)"
+          description: "95% das requisições estão levando mais de 1.5s (atual: {{ $value | printf \"%.2f\" }}s)."
+
+      # 4. Saturação: Pool de Conexões HikariCP Exaurido
+      - alert: HikariConnectionPoolExhausted
+        expr: hikaricp_connections_pending{pool="HikariPool-1"} > 0
+        for: 1m
+        labels:
+          severity: critical
+          service: database
+        annotations:
+          summary: "Threads aguardando conexão com o Banco de Dados"
+          description: "Existem {{ $value }} requisições bloqueadas aguardando conexão no HikariCP."

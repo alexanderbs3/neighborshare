@@ -48,3 +48,32 @@ spring:
     hibernate:
       ddl-auto: validate # Nunca alterar schema em prod via Hibernate
     show-sql: false
+
+
+  aws:
+    s3:
+      bucket-name: ${AWS_S3_BUCKET:neighborshare-items-bucket}
+      region: ${AWS_REGION:us-east-1}
+      access-key: ${AWS_ACCESS_KEY_ID:test}
+      secret-key: ${AWS_SECRET_ACCESS_KEY:test}
+      endpoint: ${AWS_S3_ENDPOINT:} # Preenchido com http://localhost:4566 no perfil dev (LocalStack)
+      presigned-url-duration-minutes: 15
+
+  management:
+    endpoints:
+      web:
+        exposure:
+          include: health, info, metrics, prometheus
+        base-path: /actuator
+    endpoint:
+      health:
+        show-details: always
+        probes:
+          enabled: true # Habilita Liveness e Readiness probes para Kubernetes/Docker
+    metrics:
+      tags:
+        application: neighborshare-api
+        environment: ${SPRING_PROFILES_ACTIVE:dev}
+      distribution:
+        percentiles-histogram:
+          http.server.requests: true # Histograma para cálculo de apdex e p95/p99 no Prometheus

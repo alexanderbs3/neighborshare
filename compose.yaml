@@ -1,1 +1,52 @@
-services: { }
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ns_neighborshare
+    environment:
+      POSTGRES_DB: neighborshare_dev
+      POSTGRES_USER: db_user
+      POSTGRES_PASSWORD: db_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U db_user -d neighborshare_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    container_name: neighborshare-api
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: neighborshare-prometheus
+    volumes:
+      - ./src/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./src/rules:/etc/prometheus/rules
+    ports:
+      - "9090:9090"
+    depends_on:
+      - api
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: neighborshare-alertmanager
+    volumes:
+      - ./src/rules/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    ports:
+      - "9093:9093"
+    depends_on:
+      - prometheus
+
+volumes:
+  pgdata:
