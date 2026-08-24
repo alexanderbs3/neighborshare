@@ -1,9 +1,11 @@
 package br.leetjourney.neighborshare.domain.model;
 
+import br.leetjourney.neighborshare.domain.enums.ReservationStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.SQLRestriction;
 
+import javax.net.ssl.SSLSession;
 import java.time.LocalDateTime;
 
 @Entity
@@ -33,4 +35,6 @@ public class Reservation extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ReservationStatus status; // PENDING, APPROVED, REJECTED, ACTIVE, COMPLETED, CANCELLED
+
+
 }

@@ -45,5 +45,5 @@ public class Item extends BaseEntity {
     @Column(name = "photo_url")
     private List<String> photoUrls;
 
-    private String loadRules;
+    private String loanRules;
 }

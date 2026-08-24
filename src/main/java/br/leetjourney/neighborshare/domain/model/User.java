@@ -32,8 +32,10 @@ public class User extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private GlobalRole globalRole;
 
+    @Builder.Default
     private Double reputationScore = 5.0;
 
+    @Builder.Default
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<CommunityMember> memberships = new HashSet<>();
 }
