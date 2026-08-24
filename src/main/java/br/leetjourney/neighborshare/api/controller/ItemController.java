@@ -29,7 +29,7 @@ import java.util.UUID;
 public class ItemController {
 
     private final ItemService itemService;
-    private ItemMapper itemMapper;
+    private final ItemMapper itemMapper;
 
     @PostMapping
     @Operation(summary = "Cadastrar novo item")

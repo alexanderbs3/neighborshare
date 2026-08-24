@@ -16,6 +16,11 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class FileStorageService {
 
+    private static final java.util.Set<String> ALLOWED_CONTENT_TYPES = java.util.Set.of(
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+    );
 
     private final S3Client s3Client;
     private final S3Presigner s3Presigner;
@@ -59,7 +64,7 @@ public class FileStorageService {
     }
 
     private void validateContentType(String contentType) {
-        if (contentType == null || !contentType.startsWith("image/")) {
+        if (contentType == null || !ALLOWED_CONTENT_TYPES.contains(contentType.toLowerCase())) {
             throw new IllegalArgumentException("Apenas arquivos de imagem (JPEG, PNG, WEBP) são permitidos.");
         }
     }
