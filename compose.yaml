@@ -4,14 +4,14 @@ services:
     container_name: ns_neighborshare
     environment:
       POSTGRES_DB: neighborshare_dev
-      POSTGRES_USER: db_user
-      POSTGRES_PASSWORD: db_password
+      POSTGRES_USER: ${DB_USER:-db_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-db_password}
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U db_user -d neighborshare_dev"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-db_user} -d neighborshare_dev"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -22,10 +22,30 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-dev}
+      - DB_URL=jdbc:postgresql://postgres:5432/neighborshare_dev
+      - DB_USER=${DB_USER:-db_user}
+      - DB_PASSWORD=${DB_PASSWORD:-db_password}
+      - AWS_S3_BUCKET=${AWS_S3_BUCKET:-neighborshare-items-bucket}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-test}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-test}
+      - AWS_S3_ENDPOINT=${AWS_S3_ENDPOINT:-http://localstack:4566}
     depends_on:
       postgres:
         condition: service_healthy
+    # se quiser LocalStack, adicione o serviço abaixo e descomente a dependência
+
+  # localstack:   # opcional para S3 local
+  #   image: localstack/localstack:3
+  #   container_name: neighborshare-localstack
+  #   ports:
+  #     - "4566:4566"
+  #   environment:
+  #     - SERVICES=s3
+  #     - DEFAULT_REGION=us-east-1
+  #   volumes:
+  #     - "./localstack:/var/lib/localstack"
 
   prometheus:
     image: prom/prometheus:v2.51.0
