@@ -1,34 +1,47 @@
-# src/main/resources/application.yml
 spring:
   application:
     name: neighborshare
   profiles:
-    active: dev # Perfil padrão
+    active: ${SPRING_PROFILES_ACTIVE:dev}
 
 ---
+# ======================
+# Perfil: DEV
+# ======================
 spring:
   config:
     activate:
       on-profile: dev
   datasource:
-    url: jdbc:postgresql://localhost:5432/neighborshare_dev
-    username: db_user
-    password: db_password
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/neighborshare_dev}
+    username: ${DB_USER:db_user}
+    password: ${DB_PASSWORD:db_password}
   jpa:
     hibernate:
-      ddl-auto: update # Apenas em dev para agilizar, em prod usamos Flyway/Liquibase
+      ddl-auto: update
     show-sql: true
     properties:
       hibernate:
         format_sql: true
 
+aws:
+  s3:
+    bucket-name: ${AWS_S3_BUCKET:neighborshare-items-bucket}
+    region: ${AWS_REGION:us-east-1}
+    access-key: ${AWS_ACCESS_KEY_ID:test}
+    secret-key: ${AWS_SECRET_ACCESS_KEY:test}
+    endpoint: ${AWS_S3_ENDPOINT:http://localhost:4566}   # LocalStack
+    presigned-url-duration-minutes: 15
+
 ---
+# ======================
+# Perfil: TEST
+# ======================
 spring:
   config:
     activate:
       on-profile: test
-  # Configuração para Testcontainers (Spring Boot 3.1+ suporta ConnectionDetails auto-config)
-  # Não precisamos definir URL aqui, o @ServiceConnection nos testes cuidará disso.
+  # Testcontainers + @ServiceConnection cuidam da conexão
   datasource:
     driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
   jpa:
@@ -36,44 +49,49 @@ spring:
       ddl-auto: create-drop
 
 ---
+# ======================
+# Perfil: PROD
+# ======================
 spring:
   config:
     activate:
       on-profile: prod
   datasource:
-    url: ${DB_URL} # Injetado via variável de ambiente
+    url: ${DB_URL}
     username: ${DB_USER}
     password: ${DB_PASSWORD}
   jpa:
     hibernate:
-      ddl-auto: validate # Nunca alterar schema em prod via Hibernate
+      ddl-auto: validate          # Nunca alterar schema em produção
     show-sql: false
 
+aws:
+  s3:
+    bucket-name: ${AWS_S3_BUCKET}
+    region: ${AWS_REGION:us-east-1}
+    access-key: ${AWS_ACCESS_KEY_ID}
+    secret-key: ${AWS_SECRET_ACCESS_KEY}
+    endpoint: ${AWS_S3_ENDPOINT:}  # vazio = AWS real
+    presigned-url-duration-minutes: 15
 
-  aws:
-    s3:
-      bucket-name: ${AWS_S3_BUCKET:neighborshare-items-bucket}
-      region: ${AWS_REGION:us-east-1}
-      access-key: ${AWS_ACCESS_KEY_ID:test}
-      secret-key: ${AWS_SECRET_ACCESS_KEY:test}
-      endpoint: ${AWS_S3_ENDPOINT:} # Preenchido com http://localhost:4566 no perfil dev (LocalStack)
-      presigned-url-duration-minutes: 15
-
-  management:
-    endpoints:
-      web:
-        exposure:
-          include: health, info, metrics, prometheus
-        base-path: /actuator
-    endpoint:
-      health:
-        show-details: always
-        probes:
-          enabled: true # Habilita Liveness e Readiness probes para Kubernetes/Docker
-    metrics:
-      tags:
-        application: neighborshare-api
-        environment: ${SPRING_PROFILES_ACTIVE:dev}
-      distribution:
-        percentiles-histogram:
-          http.server.requests: true # Histograma para cálculo de apdex e p95/p99 no Prometheus
+# ======================
+# Actuator (comum a todos os perfis)
+# ======================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+  metrics:
+    tags:
+      application: neighborshare-api
+      environment: ${SPRING_PROFILES_ACTIVE:dev}
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
