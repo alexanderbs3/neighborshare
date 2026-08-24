@@ -2,7 +2,7 @@
 
 # NeighborShare API
 
-**A local circular economy platform for neighbors to share items within trusted communities.**
+**Uma plataforma de economia circular local para vizinhos compartilharem itens dentro de comunidades de confiança.**
 
 ![Java](https://img.shields.io/badge/Java-21-orange?style=flat-square&logo=openjdk)
 ![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.3.5-6DB33F?style=flat-square&logo=springboot)
@@ -15,149 +15,149 @@
 
 ---
 
-## Table of Contents
+## Sumário
 
-- [About the Project](#about-the-project)
-- [Features](#features)
-- [Architecture](#architecture)
-- [Tech Stack](#tech-stack)
-- [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Environment Variables](#environment-variables)
-  - [Running Locally](#running-locally)
-- [API Reference](#api-reference)
-- [Security](#security)
-- [Observability](#observability)
-- [Project Structure](#project-structure)
+- [Sobre o Projeto](#sobre-o-projeto)
+- [Funcionalidades](#funcionalidades)
+- [Arquitetura](#arquitetura)
+- [Stack Tecnológica](#stack-tecnológica)
+- [Como Começar](#como-começar)
+  - [Pré-requisitos](#pré-requisitos)
+  - [Variáveis de Ambiente](#variáveis-de-ambiente)
+  - [Executando Localmente](#executando-localmente)
+- [Referência da API](#referência-da-api)
+- [Segurança](#segurança)
+- [Observabilidade](#observabilidade)
+- [Estrutura do Projeto](#estrutura-do-projeto)
 - [Roadmap](#roadmap)
 
 ---
 
-## About the Project
+## Sobre o Projeto
 
-NeighborShare is a RESTful backend for a **local circular economy platform** that allows neighbors to share tools, appliances, and other items within closed communities. Users create or join communities through invite codes, list items for loan, and manage reservations — all within a secure and observable environment.
+NeighborShare é um backend RESTful para uma **plataforma de economia circular local** que permite que vizinhos compartilhem ferramentas, eletrodomésticos e outros itens dentro de comunidades fechadas. Os usuários criam ou entram em comunidades por meio de códigos de convite, cadastram itens para empréstimo e gerenciam reservas — tudo em um ambiente seguro e observável.
 
-The project is built with a focus on **production-readiness**: layered architecture, stateless JWT authentication, conflict-safe reservations using serializable transactions, presigned S3 uploads, structured error responses (RFC 7807), and a full observability stack with Prometheus and Alertmanager.
-
----
-
-## Features
-
-- **Community Management** — Create communities with auto-generated invite codes; join by code; promote/demote members; transfer admin rights.
-- **Item Catalog** — Register items with condition grading, loan rules, and photos; filter by availability status.
-- **Conflict-Safe Reservations** — Overlap detection with `SERIALIZABLE` transaction isolation to prevent double-booking under concurrent requests.
-- **Reputation System** — Users start with a score of `5.0` that evolves through post-loan reviews.
-- **Presigned S3 Uploads** — Clients upload photos directly to S3/LocalStack; the API never handles binary data.
-- **Soft Delete** — Entities are never physically removed; all queries use `@SQLRestriction("deleted = false")`.
-- **Structured Errors** — All error responses follow [RFC 7807 Problem Detail](https://www.rfc-editor.org/rfc/rfc7807), including field-level validation messages.
-- **Observability** — HTTP metrics with percentile histograms, custom business metrics, Prometheus alerting rules, and Alertmanager routing with Slack integration.
+O projeto foi construído com foco em **prontidão para produção**: arquitetura em camadas, autenticação JWT sem estado (*stateless*), reservas livres de conflito usando transações serializáveis, uploads pré-assinados (*presigned*) para o S3, respostas de erro estruturadas (RFC 7807) e uma stack completa de observabilidade com Prometheus e Alertmanager.
 
 ---
 
-## Architecture
+## Funcionalidades
 
-The project follows a **layered architecture** with clear separation of concerns:
+- **Gestão de Comunidades** — Criação de comunidades com códigos de convite gerados automaticamente; entrada por código; promoção/remoção de membros; transferência de direitos de administrador.
+- **Catálogo de Itens** — Cadastro de itens com classificação de condição, regras de empréstimo e fotos; filtro por status de disponibilidade.
+- **Reservas Livres de Conflito** — Detecção de sobreposição com isolamento de transação `SERIALIZABLE` para evitar reservas duplicadas (*double-booking*) em requisições concorrentes.
+- **Sistema de Reputação** — Usuários começam com nota `5.0`, que evolui através de avaliações pós-empréstimo.
+- **Uploads Pré-assinados para o S3** — Os clientes enviam fotos diretamente para o S3/LocalStack; a API nunca manipula dados binários.
+- **Exclusão Lógica (Soft Delete)** — Entidades nunca são removidas fisicamente; todas as queries usam `@SQLRestriction("deleted = false")`.
+- **Erros Estruturados** — Todas as respostas de erro seguem o padrão [RFC 7807 Problem Detail](https://www.rfc-editor.org/rfc/rfc7807), incluindo mensagens de validação por campo.
+- **Observabilidade** — Métricas HTTP com histogramas de percentil, métricas de negócio customizadas, regras de alerta no Prometheus e roteamento via Alertmanager com integração ao Slack.
+
+---
+
+## Arquitetura
+
+O projeto segue uma **arquitetura em camadas** com clara separação de responsabilidades:
 
 ```mermaid
 flowchart TD
-    subgraph API["API Layer"]
-        A1["Controllers → request/response mapping"]
+    subgraph API["Camada de API"]
+        A1["Controllers → mapeamento de request/response"]
     end
-    subgraph APP["Application Layer"]
-        A2["Services → business logic"]
+    subgraph APP["Camada de Aplicação"]
+        A2["Services → lógica de negócio"]
         A3["DTOs, Mappers (MapStruct)"]
     end
-    subgraph DOM["Domain Layer"]
-        A4["Entities, Enums, Repository interfaces"]
+    subgraph DOM["Camada de Domínio"]
+        A4["Entities, Enums, interfaces de Repository"]
     end
-    subgraph INFRA["Infrastructure Layer"]
-        A5["Security (JWT), S3 Config"]
-        A6["Exception Handler, Metrics"]
+    subgraph INFRA["Camada de Infraestrutura"]
+        A5["Security (JWT), configuração do S3"]
+        A6["Exception Handler, métricas"]
     end
 
     API --> APP --> DOM --> INFRA
 ```
 
-### Request Lifecycle
+### Ciclo de Vida da Requisição
 
 ```mermaid
 flowchart TD
-    Client(["Client"]) --> Filter["JwtAuthenticationFilter<br/>validates Bearer token"]
-    Filter --> Controller["Controller<br/>maps HTTP to use case"]
-    Controller --> Service["Service<br/>business rules + transaction management"]
+    Client(["Cliente"]) --> Filter["JwtAuthenticationFilter<br/>valida o token Bearer"]
+    Filter --> Controller["Controller<br/>mapeia HTTP para o caso de uso"]
+    Controller --> Service["Service<br/>regras de negócio + gerenciamento de transação"]
     Service --> Repository["Repository<br/>Spring Data JPA"]
     Repository --> DB[("PostgreSQL")]
 ```
 
-### Observability Stack
+### Stack de Observabilidade
 
 ```mermaid
 flowchart LR
-    API["Spring Boot API"] -->|"/actuator/prometheus"| Prom["Prometheus<br/>scrape every 15s"]
-    Prom -->|evaluates| Rules["alert.rules.yml"]
+    API["Spring Boot API"] -->|"/actuator/prometheus"| Prom["Prometheus<br/>coleta a cada 15s"]
+    Prom -->|avalia| Rules["alert.rules.yml"]
     Rules --> AM["Alertmanager"]
-    AM -->|routes to| Slack["Slack #alerts-neighborshare"]
+    AM -->|roteia para| Slack["Slack #alerts-neighborshare"]
 ```
 
 ---
 
-## Tech Stack
+## Stack Tecnológica
 
-| Category | Technology |
+| Categoria | Tecnologia |
 |---|---|
-| Language | Java 21 |
+| Linguagem | Java 21 |
 | Framework | Spring Boot 3.3.5 |
-| Security | Spring Security + JJWT 0.12.6 |
-| Database | PostgreSQL 16 |
+| Segurança | Spring Security + JJWT 0.12.6 |
+| Banco de Dados | PostgreSQL 16 |
 | ORM | Spring Data JPA / Hibernate |
-| Cache | Caffeine (in-process) |
-| Mapping | MapStruct 1.5.5 |
-| File Storage | AWS S3 SDK v2 (LocalStack in dev) |
-| Documentation | SpringDoc OpenAPI 3 / Swagger UI |
-| Monitoring | Micrometer + Prometheus |
-| Alerting | Alertmanager + Slack |
-| Testing | JUnit 5, Testcontainers (PostgreSQL), H2 |
+| Cache | Caffeine (em processo) |
+| Mapeamento | MapStruct 1.5.5 |
+| Armazenamento de Arquivos | AWS S3 SDK v2 (LocalStack em dev) |
+| Documentação | SpringDoc OpenAPI 3 / Swagger UI |
+| Monitoramento | Micrometer + Prometheus |
+| Alertas | Alertmanager + Slack |
+| Testes | JUnit 5, Testcontainers (PostgreSQL), H2 |
 | Build | Maven 3 |
 
 ---
 
-## Getting Started
+## Como Começar
 
-### Prerequisites
+### Pré-requisitos
 
-| Tool | Version |
+| Ferramenta | Versão |
 |---|---|
 | Java | 21+ |
 | Maven | 3.9+ |
-| Docker | 24+ (for PostgreSQL and LocalStack) |
-| PostgreSQL | 16 (or via Docker) |
+| Docker | 24+ (para PostgreSQL e LocalStack) |
+| PostgreSQL | 16 (ou via Docker) |
 
-### Environment Variables
+### Variáveis de Ambiente
 
-The application uses **three Spring profiles** (`dev`, `test`, `prod`). The active profile is controlled by the `SPRING_PROFILES_ACTIVE` environment variable.
+A aplicação usa **três perfis do Spring** (`dev`, `test`, `prod`). O perfil ativo é controlado pela variável de ambiente `SPRING_PROFILES_ACTIVE`.
 
-#### `dev` profile (default)
+#### Perfil `dev` (padrão)
 
-| Variable | Default | Description |
+| Variável | Padrão | Descrição |
 |---|---|---|
-| `SPRING_PROFILES_ACTIVE` | `dev` | Active Spring profile |
-| `DB_URL` | `jdbc:postgresql://localhost:5432/neighborshare_dev` | JDBC connection URL |
-| `DB_USER` | `db_user` | Database username |
-| `DB_PASSWORD` | `db_password` | Database password |
-| `JWT_SECRET` | *(dev default — change in prod)* | HMAC-SHA secret (min. 32 chars) |
-| `JWT_EXPIRATION` | `86400000` | Access token TTL in ms (24h) |
-| `JWT_REFRESH_EXPIRATION` | `604800000` | Refresh token TTL in ms (7d) |
-| `AWS_S3_BUCKET` | `neighborshare-items-bucket` | S3 bucket name |
-| `AWS_REGION` | `us-east-1` | AWS region |
-| `AWS_ACCESS_KEY_ID` | `test` | AWS access key (LocalStack) |
-| `AWS_SECRET_ACCESS_KEY` | `test` | AWS secret key (LocalStack) |
-| `AWS_S3_ENDPOINT` | `http://localhost:4566` | Custom S3 endpoint (LocalStack) |
+| `SPRING_PROFILES_ACTIVE` | `dev` | Perfil ativo do Spring |
+| `DB_URL` | `jdbc:postgresql://localhost:5432/neighborshare_dev` | URL de conexão JDBC |
+| `DB_USER` | `db_user` | Usuário do banco de dados |
+| `DB_PASSWORD` | `db_password` | Senha do banco de dados |
+| `JWT_SECRET` | *(padrão de dev — altere em produção)* | Segredo HMAC-SHA (mín. 32 caracteres) |
+| `JWT_EXPIRATION` | `86400000` | TTL do access token em ms (24h) |
+| `JWT_REFRESH_EXPIRATION` | `604800000` | TTL do refresh token em ms (7d) |
+| `AWS_S3_BUCKET` | `neighborshare-items-bucket` | Nome do bucket S3 |
+| `AWS_REGION` | `us-east-1` | Região da AWS |
+| `AWS_ACCESS_KEY_ID` | `test` | Chave de acesso da AWS (LocalStack) |
+| `AWS_SECRET_ACCESS_KEY` | `test` | Chave secreta da AWS (LocalStack) |
+| `AWS_S3_ENDPOINT` | `http://localhost:4566` | Endpoint customizado do S3 (LocalStack) |
 
-> **Production (`prod` profile):** All variables are **required** and have no defaults. `ddl-auto` is set to `validate` — schema changes must be managed via migrations (e.g., Flyway/Liquibase).
+> **Produção (perfil `prod`):** Todas as variáveis são **obrigatórias** e não possuem valores padrão. O `ddl-auto` é definido como `validate` — mudanças de schema devem ser gerenciadas via migrations (ex.: Flyway/Liquibase).
 
-### Running Locally
+### Executando Localmente
 
-**1. Start dependencies with Docker**
+**1. Suba as dependências com Docker**
 
 ```bash
 # PostgreSQL
@@ -169,7 +169,7 @@ docker run -d \
   -p 5432:5432 \
   postgres:16-alpine
 
-# LocalStack (S3 emulation)
+# LocalStack (emulação do S3)
 docker run -d \
   --name neighborshare-localstack \
   -e SERVICES=s3 \
@@ -177,62 +177,62 @@ docker run -d \
   localstack/localstack
 ```
 
-**2. Create the S3 bucket in LocalStack**
+**2. Crie o bucket S3 no LocalStack**
 
 ```bash
 aws --endpoint-url=http://localhost:4566 s3 mb s3://neighborshare-items-bucket
 ```
 
-**3. Build and run the application**
+**3. Compile e execute a aplicação**
 
 ```bash
-# Clone the repository
+# Clone o repositório
 git clone https://github.com/alexanderbs3/neighborshare.git
 cd neighborshare
 
-# Build (skipping tests)
+# Build (sem rodar os testes)
 ./mvnw clean package -DskipTests
 
-# Run (dev profile is active by default)
+# Executa (o perfil dev é o padrão)
 java -jar target/neighborshare-1.0.0.jar
 ```
 
-**4. Verify the API is up**
+**4. Verifique se a API está no ar**
 
 ```bash
 curl http://localhost:8080/actuator/health
 # {"status":"UP", ...}
 ```
 
-**5. Access Swagger UI**
+**5. Acesse o Swagger UI**
 
 ```
 http://localhost:8080/swagger-ui.html
 ```
 
-#### Running tests
+#### Executando os testes
 
 ```bash
-# Unit + integration tests (uses H2 in-memory, test profile)
+# Testes unitários + integração (usa H2 em memória, perfil test)
 ./mvnw test
 ```
 
-> Tests use **Testcontainers** for PostgreSQL integration tests and **H2** (PostgreSQL mode) for lighter unit tests. Docker must be running.
+> Os testes usam **Testcontainers** para os testes de integração com PostgreSQL e **H2** (modo PostgreSQL) para testes unitários mais leves. O Docker precisa estar em execução.
 
 ---
 
-## API Reference
+## Referência da API
 
-All endpoints except `/api/v1/auth/**`, `/swagger-ui/**`, `/v3/api-docs/**`, `/actuator/health`, and `/actuator/info` require a `Bearer` token in the `Authorization` header.
+Todos os endpoints, exceto `/api/v1/auth/**`, `/swagger-ui/**`, `/v3/api-docs/**`, `/actuator/health` e `/actuator/info`, exigem um token `Bearer` no cabeçalho `Authorization`.
 
-### Auth
+### Autenticação
 
-| Method | Endpoint | Description | Auth |
+| Método | Endpoint | Descrição | Autenticação |
 |---|---|---|---|
-| `POST` | `/api/v1/auth/register` | Register a new user | Public |
-| `POST` | `/api/v1/auth/login` | Authenticate and receive JWT | Public |
+| `POST` | `/api/v1/auth/register` | Registra um novo usuário | Público |
+| `POST` | `/api/v1/auth/login` | Autentica e recebe o JWT | Público |
 
-**Register request body:**
+**Corpo da requisição de registro:**
 ```json
 {
   "name": "Alexander Brasiliano",
@@ -241,7 +241,7 @@ All endpoints except `/api/v1/auth/**`, `/swagger-ui/**`, `/v3/api-docs/**`, `/a
 }
 ```
 
-**Login / Register response:**
+**Resposta de login / registro:**
 ```json
 {
   "accessToken": "eyJhbGci...",
@@ -252,17 +252,17 @@ All endpoints except `/api/v1/auth/**`, `/swagger-ui/**`, `/v3/api-docs/**`, `/a
 
 ---
 
-### Communities
+### Comunidades
 
-| Method | Endpoint | Description |
+| Método | Endpoint | Descrição |
 |---|---|---|
-| `POST` | `/api/v1/communities` | Create a community (caller becomes `COMMUNITY_ADMIN`) |
-| `POST` | `/api/v1/communities/join?inviteCode=` | Join a community by invite code |
-| `GET` | `/api/v1/communities/{communityId}` | Get community details |
-| `GET` | `/api/v1/communities/my` | List my communities (pageable) |
-| `DELETE` | `/api/v1/communities/{communityId}/leave` | Leave a community |
+| `POST` | `/api/v1/communities` | Cria uma comunidade (quem chama vira `COMMUNITY_ADMIN`) |
+| `POST` | `/api/v1/communities/join?inviteCode=` | Entra em uma comunidade usando o código de convite |
+| `GET` | `/api/v1/communities/{communityId}` | Obtém os detalhes da comunidade |
+| `GET` | `/api/v1/communities/my` | Lista minhas comunidades (paginável) |
+| `DELETE` | `/api/v1/communities/{communityId}/leave` | Sai de uma comunidade |
 
-**Create community request body:**
+**Corpo da requisição de criação de comunidade:**
 ```json
 {
   "name": "Vizinhos do Pituba",
@@ -272,35 +272,35 @@ All endpoints except `/api/v1/auth/**`, `/swagger-ui/**`, `/v3/api-docs/**`, `/a
 
 ---
 
-### Community Members
+### Membros da Comunidade
 
-> These endpoints require `COMMUNITY_ADMIN` role for mutating actions.
+> Esses endpoints exigem o papel `COMMUNITY_ADMIN` para ações de escrita/alteração.
 
-| Method | Endpoint | Description |
+| Método | Endpoint | Descrição |
 |---|---|---|
-| `GET` | `/api/v1/communities/{communityId}/members` | List members (pageable) |
-| `PATCH` | `/api/v1/communities/{communityId}/members/{memberId}/role` | Update member role |
-| `DELETE` | `/api/v1/communities/{communityId}/members/{memberId}` | Remove a member |
+| `GET` | `/api/v1/communities/{communityId}/members` | Lista os membros (paginável) |
+| `PATCH` | `/api/v1/communities/{communityId}/members/{memberId}/role` | Atualiza o papel do membro |
+| `DELETE` | `/api/v1/communities/{communityId}/members/{memberId}` | Remove um membro |
 
-**Update role request body:**
+**Corpo da requisição de atualização de papel:**
 ```json
 {
   "role": "COMMUNITY_ADMIN"
 }
 ```
 
-Available roles: `COMMUNITY_ADMIN` | `MEMBER`
+Papéis disponíveis: `COMMUNITY_ADMIN` | `MEMBER`
 
 ---
 
-### Items
+### Itens
 
-| Method | Endpoint | Description |
+| Método | Endpoint | Descrição |
 |---|---|---|
-| `POST` | `/api/v1/items` | Register a new item |
-| `GET` | `/api/v1/items/community/{communityId}?status=AVAILABLE` | List community items by status (pageable) |
+| `POST` | `/api/v1/items` | Cadastra um novo item |
+| `GET` | `/api/v1/items/community/{communityId}?status=AVAILABLE` | Lista os itens da comunidade por status (paginável) |
 
-**Create item request body:**
+**Corpo da requisição de criação de item:**
 ```json
 {
   "name": "Furadeira Bosch GSB 13",
@@ -312,19 +312,19 @@ Available roles: `COMMUNITY_ADMIN` | `MEMBER`
 }
 ```
 
-**Item conditions:** `NEW` | `GOOD` | `FAIR`
+**Condições do item:** `NEW` | `GOOD` | `FAIR`
 
-**Item status (filter):** `AVAILABLE` | `RESERVED` | `BORROWED` | `UNAVAILABLE`
+**Status do item (filtro):** `AVAILABLE` | `RESERVED` | `BORROWED` | `UNAVAILABLE`
 
 ---
 
-### Reservations & Reviews
+### Reservas e Avaliações
 
-| Method | Endpoint | Description |
+| Método | Endpoint | Descrição |
 |---|---|---|
-| `POST` | `/api/v1/reservations/reviews` | Submit a review for a completed reservation |
+| `POST` | `/api/v1/reservations/reviews` | Envia uma avaliação para uma reserva concluída |
 
-**Create review request body:**
+**Corpo da requisição de criação de avaliação:**
 ```json
 {
   "reservationId": "{{reservationId}}",
@@ -333,9 +333,9 @@ Available roles: `COMMUNITY_ADMIN` | `MEMBER`
 }
 ```
 
-`rating` must be an integer between `1` and `5`.
+`rating` deve ser um número inteiro entre `1` e `5`.
 
-**Reservation lifecycle:**
+**Ciclo de vida da reserva:**
 
 ```mermaid
 stateDiagram-v2
@@ -355,22 +355,22 @@ stateDiagram-v2
 
 ---
 
-### Media & Storage
+### Mídia e Armazenamento
 
-| Method | Endpoint | Description |
+| Método | Endpoint | Descrição |
 |---|---|---|
-| `POST` | `/api/v1/media/presigned-url?filename=&contentType=` | Generate a presigned S3 upload URL (valid for 15 min) |
+| `POST` | `/api/v1/media/presigned-url?filename=&contentType=` | Gera uma URL pré-assinada do S3 para upload (válida por 15 min) |
 
-**Upload flow:**
-1. Call this endpoint to receive `uploadUrl` and `fileKey`.
-2. `PUT` the file binary directly to `uploadUrl` with the matching `Content-Type` header.
-3. Include `fileKey` (or the public URL) in the `photoUrls` array when creating an item.
+**Fluxo de upload:**
+1. Chame esse endpoint para receber `uploadUrl` e `fileKey`.
+2. Faça um `PUT` do binário do arquivo diretamente para `uploadUrl`, com o cabeçalho `Content-Type` correspondente.
+3. Inclua `fileKey` (ou a URL pública) no array `photoUrls` ao criar um item.
 
 ---
 
-### Error Responses
+### Respostas de Erro
 
-All errors follow [RFC 7807 Problem Detail](https://www.rfc-editor.org/rfc/rfc7807):
+Todos os erros seguem o padrão [RFC 7807 Problem Detail](https://www.rfc-editor.org/rfc/rfc7807):
 
 ```json
 {
@@ -382,39 +382,39 @@ All errors follow [RFC 7807 Problem Detail](https://www.rfc-editor.org/rfc/rfc78
 }
 ```
 
-| HTTP Status | Scenario |
+| Status HTTP | Cenário |
 |---|---|
-| `400` | Validation errors (includes `invalidFields` map) |
-| `401` | Missing or invalid JWT |
-| `403` | Insufficient permissions |
-| `404` | Resource not found |
-| `409` | Business rule violation (e.g., double-booking, already a member) |
+| `400` | Erros de validação (inclui o mapa `invalidFields`) |
+| `401` | JWT ausente ou inválido |
+| `403` | Permissões insuficientes |
+| `404` | Recurso não encontrado |
+| `409` | Violação de regra de negócio (ex.: reserva duplicada, já é membro) |
 
 ---
 
-## Security
+## Segurança
 
-- **Authentication:** Stateless JWT (no server-side sessions). Tokens are validated on every request by `JwtAuthenticationFilter`.
-- **Authorization:** `@EnableMethodSecurity` with `@PreAuthorize` at the service layer. The `/actuator/prometheus` endpoint requires `ROLE_ADMIN`.
-- **Passwords:** Hashed with BCrypt.
-- **Token lifetime:** Access token = **24h** · Refresh token = **7d** (configurable via environment variables).
-- **Soft Delete:** Deleted users are locked out via `UserDetails` methods that check the `deleted` flag.
+- **Autenticação:** JWT sem estado (sem sessões no servidor). Os tokens são validados em toda requisição pelo `JwtAuthenticationFilter`.
+- **Autorização:** `@EnableMethodSecurity` com `@PreAuthorize` na camada de service. O endpoint `/actuator/prometheus` exige `ROLE_ADMIN`.
+- **Senhas:** Hash com BCrypt.
+- **Tempo de vida do token:** Access token = **24h** · Refresh token = **7d** (configurável via variáveis de ambiente).
+- **Exclusão Lógica:** Usuários excluídos ficam bloqueados via métodos do `UserDetails` que verificam a flag `deleted`.
 
 ---
 
-## Observability
+## Observabilidade
 
-### Actuator Endpoints
+### Endpoints do Actuator
 
-| Endpoint | Access | Description |
+| Endpoint | Acesso | Descrição |
 |---|---|---|
-| `GET /actuator/health` | Public | Liveness and readiness probes |
-| `GET /actuator/info` | Public | Application info |
-| `GET /actuator/prometheus` | `ROLE_ADMIN` | Prometheus metrics scrape |
+| `GET /actuator/health` | Público | Probes de liveness e readiness |
+| `GET /actuator/info` | Público | Informações da aplicação |
+| `GET /actuator/prometheus` | `ROLE_ADMIN` | Coleta de métricas do Prometheus |
 
-### Prometheus Metrics
+### Métricas do Prometheus
 
-HTTP metrics are exported with **percentile histograms** (P50, P95, P99) via Micrometer:
+As métricas HTTP são exportadas com **histogramas de percentil** (P50, P95, P99) via Micrometer:
 
 ```yaml
 metrics:
@@ -423,41 +423,41 @@ metrics:
       http.server.requests: true
 ```
 
-**Custom business metrics** defined in `BusinessMetrics.java`:
+**Métricas de negócio customizadas** definidas em `BusinessMetrics.java`:
 
-| Metric | Type | Description |
+| Métrica | Tipo | Descrição |
 |---|---|---|
-| `neighborshare_reservations_created_total` | Counter | Total reservations requested |
-| `neighborshare_reservation_processing_time_seconds` | Timer | Reservation business logic duration |
+| `neighborshare_reservations_created_total` | Counter | Total de reservas solicitadas |
+| `neighborshare_reservation_processing_time_seconds` | Timer | Duração da lógica de negócio da reserva |
 
-### Alerting Rules (`alert.rules.yml`)
+### Regras de Alerta (`alert.rules.yml`)
 
-| Alert | Condition | Severity |
+| Alerta | Condição | Severidade |
 |---|---|---|
-| `NeighborShareApiDown` | Instance unreachable for > 1 min | 🔴 Critical |
-| `HighHttp5xxRate` | 5xx error rate > 5% for 2 min | 🔴 Critical |
-| `HighHttpLatencyP95` | P95 latency > 1.5s for 3 min | 🟡 Warning |
-| `HikariConnectionPoolExhausted` | Threads waiting for DB connections | 🔴 Critical |
+| `NeighborShareApiDown` | Instância inacessível por mais de 1 min | 🔴 Crítico |
+| `HighHttp5xxRate` | Taxa de erros 5xx > 5% por 2 min | 🔴 Crítico |
+| `HighHttpLatencyP95` | Latência P95 > 1,5s por 3 min | 🟡 Atenção |
+| `HikariConnectionPoolExhausted` | Threads aguardando conexões com o banco | 🔴 Crítico |
 
-### Alert Inhibition (`alertmanager.yml`)
+### Inibição de Alertas (`alertmanager.yml`)
 
-Inhibition rules prevent alert storms from a single root cause:
-- **PostgreSQL down** → silences 5xx, HikariCP, and latency alerts.
-- **API down** → silences all internal HTTP and metric alerts.
-- **Critical active** → silences warning-level alerts for the same service.
+Regras de inibição evitam tempestades de alertas causadas por uma única causa raiz:
+- **PostgreSQL fora do ar** → silencia os alertas de 5xx, HikariCP e latência.
+- **API fora do ar** → silencia todos os alertas internos de HTTP e métricas.
+- **Alerta crítico ativo** → silencia alertas de nível "atenção" do mesmo serviço.
 
-Notifications are routed to `#alerts-neighborshare` on Slack via webhook.
+As notificações são roteadas para `#alerts-neighborshare` no Slack via webhook.
 
 ---
 
-## Project Structure
+## Estrutura do Projeto
 
 ```
 src/
 ├── main/
 │   ├── java/br/leetjourney/neighborshare/
 │   │   │
-│   │   ├── api/controller/             # HTTP layer — request/response mapping
+│   │   ├── api/controller/             # Camada HTTP — mapeamento de request/response
 │   │   │   ├── AuthController.java
 │   │   │   ├── CommunityController.java
 │   │   │   ├── CommunityMemberController.java
@@ -467,10 +467,10 @@ src/
 │   │   │
 │   │   ├── application/
 │   │   │   ├── dto/
-│   │   │   │   ├── request/            # Inbound DTOs with Bean Validation
-│   │   │   │   └── response/           # Outbound DTOs
-│   │   │   ├── mapper/                 # MapStruct mappers (compile-time generated)
-│   │   │   └── service/               # Business logic + transaction boundaries
+│   │   │   │   ├── request/            # DTOs de entrada com Bean Validation
+│   │   │   │   └── response/           # DTOs de saída
+│   │   │   ├── mapper/                 # Mappers do MapStruct (gerados em tempo de compilação)
+│   │   │   └── service/               # Lógica de negócio + limites de transação
 │   │   │       ├── AuthService.java
 │   │   │       ├── CommunityService.java
 │   │   │       ├── CommunityMemberService.java
@@ -482,7 +482,7 @@ src/
 │   │   ├── domain/
 │   │   │   ├── enums/                  # GlobalRole, CommunityRole, ItemCondition,
 │   │   │   │                           #   ItemStatus, ReservationStatus
-│   │   │   ├── model/                  # JPA entities (soft-delete via @SQLRestriction)
+│   │   │   ├── model/                  # Entidades JPA (exclusão lógica via @SQLRestriction)
 │   │   │   │   ├── BaseEntity.java     # id (UUID), createdAt, updatedAt, deleted
 │   │   │   │   ├── User.java
 │   │   │   │   ├── Community.java
@@ -490,22 +490,22 @@ src/
 │   │   │   │   ├── Item.java
 │   │   │   │   ├── Reservation.java
 │   │   │   │   └── Review.java
-│   │   │   └── repository/             # Spring Data JPA interfaces
+│   │   │   └── repository/             # Interfaces do Spring Data JPA
 │   │   │
 │   │   └── infrastructure/
-│   │       ├── config/S3Config.java    # S3Client + S3Presigner beans
+│   │       ├── config/S3Config.java    # Beans S3Client + S3Presigner
 │   │       ├── exception/              # GlobalExceptionHandler (RFC 7807)
 │   │       ├── metrics/                # BusinessMetrics (Counter + Timer)
 │   │       └── security/               # JwtService, JwtAuthenticationFilter,
 │   │                                   #   SecurityConfig, UserDetailsServiceConfig
 │   │
 │   └── resources/
-│       ├── application.yml             # Multi-profile config (dev / test / prod)
-│       └── prometheus/prometheus.yml   # Prometheus scrape + alert config
+│       ├── application.yml             # Config multi-perfil (dev / test / prod)
+│       └── prometheus/prometheus.yml   # Config de coleta e alertas do Prometheus
 │
 ├── rules/
-│   ├── alert.rules.yml                 # Prometheus alerting rules
-│   └── alertmanager.yml                # Alertmanager routing + inhibition + Slack
+│   ├── alert.rules.yml                 # Regras de alerta do Prometheus
+│   └── alertmanager.yml                # Roteamento, inibição e Slack do Alertmanager
 │
 └── test/                               # JUnit 5 + Testcontainers + H2
 ```
@@ -514,22 +514,22 @@ src/
 
 ## Roadmap
 
-Features already implemented at the service layer but not yet exposed via REST:
+Funcionalidades já implementadas na camada de service, mas ainda não expostas via REST:
 
-- [ ] `POST /api/v1/reservations` — Create a reservation (service + overlap-detection logic implemented with `SERIALIZABLE` isolation; missing controller endpoint and request DTO)
-- [ ] `PATCH /api/v1/reservations/{id}/status` — Approve / reject / cancel a reservation (owner action)
-- [ ] `GET /api/v1/items/{itemId}` — Get a single item by ID
-- [ ] `PATCH /api/v1/items/{itemId}` — Edit item details or status
-- [ ] `GET /api/v1/users/me` — Get authenticated user profile and reputation score
-- [ ] `docker-compose.yml` — Orchestrate API + PostgreSQL + LocalStack + Prometheus + Alertmanager
-- [ ] Database migrations — Replace `ddl-auto: update` with Flyway or Liquibase
-- [ ] Refresh token endpoint — `POST /api/v1/auth/refresh`
-- [ ] `GET /api/v1/reservations` — List reservations by item or user
+- [ ] `POST /api/v1/reservations` — Cria uma reserva (lógica de service e detecção de sobreposição já implementadas com isolamento `SERIALIZABLE`; falta o endpoint do controller e o DTO de requisição)
+- [ ] `PATCH /api/v1/reservations/{id}/status` — Aprova / rejeita / cancela uma reserva (ação do dono do item)
+- [ ] `GET /api/v1/items/{itemId}` — Obtém um único item pelo ID
+- [ ] `PATCH /api/v1/items/{itemId}` — Edita os detalhes ou o status do item
+- [ ] `GET /api/v1/users/me` — Obtém o perfil do usuário autenticado e a nota de reputação
+- [ ] `docker-compose.yml` — Orquestra API + PostgreSQL + LocalStack + Prometheus + Alertmanager
+- [ ] Migrations de banco de dados — Substituir `ddl-auto: update` por Flyway ou Liquibase
+- [ ] Endpoint de refresh token — `POST /api/v1/auth/refresh`
+- [ ] `GET /api/v1/reservations` — Lista reservas por item ou usuário
 
 ---
 
 <div align="center">
 
-Built with ☕ and Spring Boot by [Alexander Brasiliano](https://github.com/alexanderbs3)
+Feito com ☕ e Spring Boot por [Alexander Brasiliano](https://github.com/alexanderbs3)
 
 </div>
