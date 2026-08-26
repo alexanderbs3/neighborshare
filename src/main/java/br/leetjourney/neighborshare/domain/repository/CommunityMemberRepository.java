@@ -34,4 +34,6 @@ public interface CommunityMemberRepository extends JpaRepository<CommunityMember
             countQuery = "SELECT COUNT(cm) FROM CommunityMember cm WHERE cm.user.id = :userId"
     )
     Page<CommunityMember> findAllByUserIdWithCommunity(@Param("userId") UUID userId, Pageable pageable);
+
+
 }
